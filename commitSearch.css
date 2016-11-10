@@ -1,0 +1,50 @@
+a {
+  color: rgb(24, 151, 191);
+}
+
+.avatar img{
+  border-radius: 50%;
+  max-width: 64px;
+}
+
+.avatar{
+  width: 64px;
+}
+
+
+#commitTable{
+  width: 70vw;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+#commitTable a:link{
+    text-decoration: none;
+}
+
+#commitTable h4{
+  width: 60vw;
+  margin: 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+#commitTable span{
+  margin: 3px;
+}
+
+#commitTable td{
+  padding-top: 5px;
+}
+
+#filterForm{
+  margin-left: auto;
+  margin-right: auto;
+  width: 75vw;
+  margin-top: 5px;
+}
+
+#filterSubmit{
+  float: right;
+}
