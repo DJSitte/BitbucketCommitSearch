@@ -1,0 +1,137 @@
+<html>
+<head>
+</head>
+<body>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+  <link rel="stylesheet" href="https://code.getmdl.io/1.2.1/material.indigo-pink.min.css">
+  <link rel="stylesheet" href="https://unpkg.com/flatpickr/dist/flatpickr.min.css">
+
+  <script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
+  <script src="https://unpkg.com/flatpickr"></script>
+  <script defer src="https://code.getmdl.io/1.2.1/material.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore-min.js"></script>
+  <script type="text/javascript">
+    $(document).ready(function(){
+      flatpickr(".datepicker", {
+        altFormat: "F j, Y"
+      });
+    });
+
+    function pageRequest(arr, url, auth, page, filter){
+      $.ajax({
+        url: "https://bitbucket.org/api/2.0/repositories/"+ url + "/commits?pagelen=100&page=" + page,
+        method: "GET",
+        headers: {
+          "Authorization" : "Basic "+auth
+        }
+      }).done(function(data){
+        if(data.values){
+          arr = arr.concat(data.values);
+          console.log("Finished: "+page);
+        }
+        if(data.next && data.next != ""){
+          pageRequest(arr, url, auth, page + 1, filter);
+        }else{
+          console.log("Found end on page " + page);
+          filterArr(arr, filter);
+        }
+      });
+    }
+
+    function filterArr(arr, filter){
+      if(filter["to"] && filter["to"] != ""){
+        var toDateFilter = Date.parse(filter["to"]);
+      }
+      if(filter["from"] && filter["from"] != ""){
+        var fromDateFilter = Date.parse(filter["from"]);
+      }
+      if(filter["user"] && filter["user"] != ""){
+        var usernameFilter = filter["user"]
+      }
+      if(filter["desc"]){
+        var sortDesc = filter["desc"] == true;
+      }
+
+      commits = _.filter(arr, function(com){
+        return (usernameFilter ? com && com["author"] && com["author"]["user"] && com["author"]["user"]["username"] == usernameFilter : true) &&
+           (toDateFilter ? Date.parse(com["date"]) < toDateFilter : true) && (fromDateFilter ? Date.parse(com["date"]) > fromDateFilter : true);
+      });
+      commits = _.sortBy(commits, 'date');
+      if(sortDesc){
+        commits = commits.reverse();
+      }
+      console.log("Commits length: "+commits.length);
+      displayCommits(commits);
+    }
+
+    function displayCommits(commits){
+      $("#commitTable").html("");
+      _.each(commits, function(commit){
+        var hash = commit["hash"]
+          $("#commitTable").append($("<tr id='"+hash+"'><tr>"))
+          $("#"+hash).html("<td><img src='"+commit["author"]["user"]["links"]["avatar"]["href"]+"'</td><td><a href='"+commit["links"]["html"]["href"]+"'>"+commit["message"]+"</a></td>");
+      });
+    }
+
+    function formSubmit(event){
+      event.preventDefault();
+      var username = $("#username").val();
+      var password = $("#password").val();
+      var url = $("#url").val();
+      var user = $("#userFilter").val();
+      var fromDate = $("#fromDate").val();
+      var toDate = $("#toDate").val();
+
+      pageRequest([], url, btoa(username+":"+password), 1, {to: toDate, from: fromDate, user: user, desc: true});
+    }
+
+  </script>
+
+  <form onsubmit="formSubmit(event)">
+    <div class="mdl-textfield mdl-js-textfield  mdl-textfield--floating-label">
+      <input class="mdl-textfield__input" type="text" id="username"/>
+      <label class="mdl-textfield__label" for="username">Username</label>
+    </div>
+    <div class="mdl-textfield mdl-js-textfield  mdl-textfield--floating-label">
+      <input class="mdl-textfield__input" type="password" id="password"/>
+      <label class="mdl-textfield__label" for="password">Password</label>
+    </div>
+    <br/>
+    <div class="mdl-textfield mdl-js-textfield  mdl-textfield--floating-label">
+      <input class="mdl-textfield__input" type="text" id="url"/>
+      <label class="mdl-textfield__label" for="url">Repository</label>
+      <div class="mdl-tooltip mdl-tooltip--large" for="url">
+        &lt;username&gt;/&lt;repo name&gt;
+      </div>
+    </div>
+    <div class="mdl-textfield mdl-js-textfield  mdl-textfield--floating-label">
+      <input class="mdl-textfield__input" type="text" id="userFilter"/>
+      <label class="mdl-textfield__label" for="userFilter">User Filter</label>
+    </div>
+    <br/>
+    <div class="mdl-textfield mdl-js-textfield  mdl-textfield--floating-label">
+      <input class="mdl-textfield__input datepicker" type="text" id="fromDate"/>
+      <label class="mdl-textfield__label" for="fromDate">From</label>
+    </div>
+    <div class="mdl-textfield mdl-js-textfield  mdl-textfield--floating-label">
+      <input class="mdl-textfield__input datepicker" type="text" id="toDate"/>
+      <label class="mdl-textfield__label" for="toDate">To</label>
+    </div>
+    <br />
+    <button type="submit" class="mdl-button mdl-js-button mdl-button--raised">Search</button>
+
+    <table>
+      <thead>
+        <tr>
+          <th></th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="commitTable">
+
+      </tbody>
+    </table>
+
+  </form>
+</body>
+</html>
